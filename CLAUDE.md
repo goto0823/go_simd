@@ -44,11 +44,6 @@ Go 初心者のユーザーが、SIMD を題材に低レベル（生成アセン
 - 2MB の huge page を使って 1e7 要素のケースが変わるか見る。
 - `perf` でキャッシュミスを数えて上の仮説を確かめる（WSL では制約あり）。
 
-### 未対応
-
-- `.gitignore`（`.direnv/`, `.go/`）がまだない。
-- `flake.nix` / `flake.lock` が git に add されていないため、`nix develop` は `path:` 付きでないと失敗する。
-
 ## 開発環境
 
 - Nix flake + direnv (`.envrc` は `use flake`)。`flake.nix` が Go 1.27.0・gopls・gotools・go-tools・delve・air を提供し、`GOEXPERIMENT=simd` と `GOPATH=$PWD/.go` を設定する。
@@ -56,10 +51,10 @@ Go 初心者のユーザーが、SIMD を題材に低レベル（生成アセン
 - Claude の Bash は direnv の環境に入らず、システムにある別バージョンの Go が使われる。Go のコマンドは dev shell 経由で実行する:
 
   ```bash
-  nix develop "path:$PWD" -c go test ./...
+  nix develop -c go test ./...
   ```
 
-  `path:` を付けるのは、git リポジトリ内の flake は git が追跡しているファイルしか見ず、`flake.nix` が未追跡だと `Path 'flake.nix' ... is not tracked by Git` で失敗するため。shellHook が毎回 `go version` を表示する。
+  git リポジトリ内の flake は git が追跡しているファイルしか見ない。新しく作ったファイルは `git add` するまで flake から見えず、`Path '...' is not tracked by Git` で失敗する（add 前に試すなら `nix develop "path:$PWD" -c ...`）。shellHook が毎回 `go version` を表示する。
 - `.direnv/` と `.go/` はローカルで生成されるディレクトリ。
 
 ## よく使うコマンド（dev shell 内で実行）
