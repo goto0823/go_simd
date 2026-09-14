@@ -29,7 +29,9 @@ func TestSumScalar(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := SumScalar(tt.slice)
+			f := SumSIMD
+			t.Logf("f の型は: %T", f)
+			got := f(tt.slice)
 			if tt.want != got {
 				t.Errorf("want: %g, got: %g", tt.want, got)
 			}
@@ -38,7 +40,7 @@ func TestSumScalar(t *testing.T) {
 
 }
 
-func BenchmarkSumScalar(b *testing.B) {
+func BenchmarkSum(b *testing.B) {
 	tests := []struct {
 		name  string
 		slice []float32
@@ -65,14 +67,34 @@ func BenchmarkSumScalar(b *testing.B) {
 		},
 	}
 
+	impls := []struct {
+		name string
+		fn   func([]float32) float32
+	}{
+		{
+			name: "scalar",
+			fn:   SumScalar,
+		},
+		{
+			name: "simd",
+			fn:   SumSIMD,
+		},
+	}
+
 	for _, tt := range tests {
 		for i := range tt.slice {
 			tt.slice[i] = float32(i)
 		}
+	}
 
-		b.Run(tt.name, func(b *testing.B) {
-			for b.Loop() {
-				SumScalar(tt.slice)
+	for _, impl := range impls {
+		b.Run(impl.name, func(b *testing.B) {
+			for _, tt := range tests {
+				b.Run(tt.name, func(b *testing.B) {
+					for b.Loop() {
+						impl.fn(tt.slice)
+					}
+				})
 			}
 		})
 	}
