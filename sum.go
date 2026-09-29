@@ -4,6 +4,12 @@ import (
 	"simd"
 )
 
+type User struct {
+	id    int
+	name  string
+	email string
+}
+
 func SumScalar(xs []float32) float32 {
 	var s float32
 
@@ -25,16 +31,15 @@ func SumSIMD(xs []float32) float32 {
 		c += n
 	}
 
+	b, _ := simd.LoadFloat32sPart(xs[c:])
+	acc = acc.Add(b)
+
 	var arr [8]float32
 	var r float32
 	acc.Store(arr[:])
 
 	for i, _ := range arr[:n] {
 		r += arr[i]
-	}
-
-	for _, v := range xs[c:] {
-		r += v
 	}
 
 	return r
