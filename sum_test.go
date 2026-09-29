@@ -40,6 +40,63 @@ func TestSumScalar(t *testing.T) {
 
 }
 
+func TestSumGreater(t *testing.T) {
+	tests := []struct {
+		name      string
+		slice     []float32
+		threshold float32
+		want      float32
+	}{
+		{
+			name:      "等しい数は足さない",
+			slice:     []float32{1, 4, 3, 8, 5},
+			threshold: 4,
+			want:      13,
+		},
+		{
+			name:      "nilのスライス",
+			slice:     nil,
+			threshold: 4,
+			want:      0,
+		},
+		{
+			name:      "端数の存在するケース",
+			slice:     []float32{1, 2, 3, 4, 5},
+			threshold: 3,
+			want:      9,
+		},
+	}
+
+	impls := []struct {
+		name string
+		fn   func([]float32, float32) float32
+	}{
+		{
+			name: "Scalar",
+			fn:   SumGreaterScalar,
+		},
+		{
+			name: "Simd",
+			fn:   SumGreaterSIMD,
+		},
+	}
+
+	for _, impl := range impls {
+		t.Run(impl.name, func(t *testing.T) {
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					f := impl.fn
+					got := f(tt.slice, tt.threshold)
+
+					if tt.want != got {
+						t.Errorf("want: %g, got: %g", tt.want, got)
+					}
+				})
+			}
+		})
+	}
+}
+
 func BenchmarkSum(b *testing.B) {
 	tests := []struct {
 		name  string
