@@ -4,12 +4,6 @@ import (
 	"simd"
 )
 
-type User struct {
-	id    int
-	name  string
-	email string
-}
-
 func SumScalar(xs []float32) float32 {
 	var s float32
 
