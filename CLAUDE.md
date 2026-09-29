@@ -39,6 +39,15 @@ Go 初心者のユーザーが、SIMD を題材に低レベル（生成アセン
 | 7 | FMA、メモリ帯域、アラインメント、アキュムレータを分けて依存チェーンを短くする | |
 | 8 | 実用的な題材（内積、UTF-8 検証、JSON パーサなど） | |
 
+### ステップ4 の途中経過（2026-09-29）
+
+- マスク: 比較（`Greater` / `Less` / `LessEqual` など）でレーンごとの真偽の並び `Mask32s` ができる。`Greater` の反対は `LessEqual`（等しいレーンは `Greater` も `Less` も 0）。
+- `a.Masked(mask)` は、マスクを整数（真 = -1 = 全ビット 1）にして AND を取るだけ（`src/simd/archsimd/maskmerge_gen_amd64.go`）。偽のレーンは全ビット 0 = `0.0`。
+- `SumGreaterScalar` / `SumGreaterSIMD(xs, t)`: ループの前で `tv := simd.BroadcastFloat32s(t)`、ループ内で読む → `Greater(tv)` → `Masked` → `acc = acc.Add(...)`、端数も同じ処理。負のしきい値で 0 埋めのレーンがマスクを通っても、値が 0 なので合計は変わらない。
+- テスト `TestSumGreater`: ケース表（等しい値は足さない・nil・端数あり）× 実装表（Scalar / Simd）。スクラッチで端数の `Add` を消すと Simd の 2 ケースだけ落ちることを確認。
+- つまずいた点: 戻り値を捨てる（`a.Greater(tv)` / `acc.Add(a)`、`go vet` は警告しない）、`mask.Masked()` と逆に呼ぶ。
+- 残り: コミットと push（ブランチ未作成）、ベンチ、バイト検索など。
+
 ### ステップ3 の結果（2026-09-29）
 
 - `SumSIMD` の端数ループを、ループ後の `b, _ := simd.LoadFloat32sPart(xs[c:])` → `acc = acc.Add(b)` に置き換えた。足りないレーンは 0 で埋まり、空のスライスなら全部 0 のベクタが返るので、`if` で分けなくてよい。
