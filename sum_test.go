@@ -1,6 +1,7 @@
 package simdlab
 
 import (
+	"math/rand/v2"
 	"testing"
 )
 
@@ -150,6 +151,190 @@ func BenchmarkSum(b *testing.B) {
 				b.Run(tt.name, func(b *testing.B) {
 					for b.Loop() {
 						impl.fn(tt.slice)
+					}
+				})
+			}
+		})
+	}
+}
+
+func BenchmarkSumGreater(b *testing.B) {
+	tests := []struct {
+		name  string
+		slice []float32
+	}{
+		{
+			name:  "1000",
+			slice: make([]float32, 1000),
+		},
+		{
+			name:  "10000",
+			slice: make([]float32, 10000),
+		},
+		{
+			name:  "100000",
+			slice: make([]float32, 100000),
+		},
+		{
+			name:  "1000000",
+			slice: make([]float32, 1000000),
+		},
+		{
+			name:  "10000000",
+			slice: make([]float32, 10000000),
+		},
+	}
+
+	impls := []struct {
+		name string
+		fn   func([]float32, float32) float32
+	}{
+		{
+			name: "scalar",
+			fn:   SumGreaterScalar,
+		},
+		{
+			name: "simd",
+			fn:   SumGreaterSIMD,
+		},
+	}
+
+	for _, tt := range tests {
+		for i := range tt.slice {
+			tt.slice[i] = float32(i)
+		}
+	}
+
+	for _, impl := range impls {
+		b.Run(impl.name, func(b *testing.B) {
+			for _, tt := range tests {
+				b.Run(tt.name, func(b *testing.B) {
+					th := float32(len(tt.slice) / 2)
+					for b.Loop() {
+						impl.fn(tt.slice, th)
+					}
+				})
+			}
+		})
+	}
+}
+
+func BenchmarkRandomSumGreater(b *testing.B) {
+	tests := []struct {
+		name  string
+		slice []float32
+	}{
+		{
+			name:  "1000",
+			slice: make([]float32, 1000),
+		},
+		{
+			name:  "10000",
+			slice: make([]float32, 10000),
+		},
+		{
+			name:  "100000",
+			slice: make([]float32, 100000),
+		},
+		{
+			name:  "1000000",
+			slice: make([]float32, 1000000),
+		},
+		{
+			name:  "10000000",
+			slice: make([]float32, 10000000),
+		},
+	}
+
+	impls := []struct {
+		name string
+		fn   func([]float32, float32) float32
+	}{
+		{
+			name: "scalar",
+			fn:   SumGreaterScalar,
+		},
+		{
+			name: "simd",
+			fn:   SumGreaterSIMD,
+		},
+	}
+
+	for _, tt := range tests {
+		for i := range tt.slice {
+			tt.slice[i] = float32(i)
+		}
+		rand.Shuffle(len(tt.slice), func(i, j int) { tt.slice[i], tt.slice[j] = tt.slice[j], tt.slice[i] })
+	}
+
+	for _, impl := range impls {
+		b.Run(impl.name, func(b *testing.B) {
+			for _, tt := range tests {
+				b.Run(tt.name, func(b *testing.B) {
+					th := float32(len(tt.slice) / 2)
+					for b.Loop() {
+						impl.fn(tt.slice, th)
+					}
+				})
+			}
+		})
+	}
+}
+
+func BenchmarkRandamSumGreaterRatio(b *testing.B) {
+	tests := []struct {
+		name      string
+		threshold float32
+	}{
+		{
+			name:      "0%",
+			threshold: 100000,
+		},
+		{
+			name:      "10%",
+			threshold: 90000,
+		},
+		{
+			name:      "50%",
+			threshold: 50000,
+		},
+		{
+			name:      "90%",
+			threshold: 10000,
+		},
+		{
+			name:      "100%",
+			threshold: -1,
+		},
+	}
+
+	impls := []struct {
+		name string
+		fn   func([]float32, float32) float32
+	}{
+		{
+			name: "scalar",
+			fn:   SumGreaterScalar,
+		},
+		{
+			name: "simd",
+			fn:   SumGreaterSIMD,
+		},
+	}
+
+	data := make([]float32, 100000)
+	for i := range data {
+		data[i] = float32(i)
+	}
+
+	rand.Shuffle(len(data), func(i, j int) { data[i], data[j] = data[j], data[i] })
+
+	for _, impl := range impls {
+		b.Run(impl.name, func(b *testing.B) {
+			for _, tt := range tests {
+				b.Run(tt.name, func(b *testing.B) {
+					for b.Loop() {
+						impl.fn(data, tt.threshold)
 					}
 				})
 			}
