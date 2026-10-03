@@ -1,6 +1,7 @@
 package simdlab
 
 import (
+	"fmt"
 	"simd"
 )
 
@@ -79,4 +80,39 @@ func SumGreaterSIMD(xs []float32, t float32) float32 {
 	}
 
 	return r
+}
+
+func BitSIMD() {
+	s := []byte("hello, world!xyz")
+	a := simd.LoadUint8s(s)
+	fmt.Println("Len", a.Len())
+
+	var ts byte = 'm'
+	t := simd.BroadcastUint8s(ts)
+	e := a.Equal(t)
+
+	var vc = make([]int8, 16)
+
+	i := e.ToInt8s()
+
+	i.Store(vc)
+
+	var m = -1
+	var st string
+	for i, v := range vc {
+		if v < 0 {
+			m = i
+			break
+		}
+	}
+
+	if 0 > m {
+		fmt.Printf("%c は %s の中にありませんでした。", ts, s)
+		return
+	} else {
+		st = string(s[m])
+		fmt.Println(m)
+		fmt.Println(st)
+	}
+
 }
